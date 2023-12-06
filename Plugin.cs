@@ -31,7 +31,7 @@ namespace MoreNotesMod
             // Plugin startup logic
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded! And the shortcut works perfect");
 
-    
+            //Applies patches (I think)
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             _harmony.PatchAll(typeof(Patches.WirtePatch));
 
