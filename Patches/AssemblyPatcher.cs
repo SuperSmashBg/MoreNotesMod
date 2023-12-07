@@ -10,5 +10,6 @@ public static class AssemblyPatcher
     public static void Patch(AssemblyDefinition assembly)
     {
         // Patcher code here
+
     }
 }
