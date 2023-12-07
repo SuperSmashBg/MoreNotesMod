@@ -33,7 +33,7 @@ namespace MoreNotesMod
 
             //Applies patches (I think)
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
-            _harmony.PatchAll(typeof(Patches.WirtePatch));
+            _harmony.PatchAll(typeof(Patches.StatPatches));
 
         }
     }
