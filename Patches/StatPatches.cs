@@ -1,14 +1,17 @@
-﻿using GameNetcodeStuff;
+﻿using BepInEx.Logging;
+using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 
 namespace MoreNotesMod.Patches
 {
     [HarmonyPatch]
     public class StatPatches
     {
+        static readonly ManualLogSource mls = Plugin.Instance.mls;
 
         public static float[] danceTotal;
         public static int conPlayerReq = 0;
@@ -34,7 +37,7 @@ namespace MoreNotesMod.Patches
             var q_allPlayerStats =  __instance.gameStats.allPlayerStats;
             var q_allPlayerScripts = __instance.allPlayerScripts;
 
-            //Refactor of the code that sets isActivePlayer
+            //copy of the code that sets isActivePlayer
             for (int i = 0; i < q_allPlayerStats.Length; i++)
             {
                 q_allPlayerStats[i].isActivePlayer =
@@ -46,12 +49,13 @@ namespace MoreNotesMod.Patches
             //Refactor of code that gets the min step player
             {
                 int minSteps = q_allPlayerStats
-                    .Where(stats => stats.isActivePlayer).ToArray()
+                    .Where(stats => stats.isActivePlayer).ToArray() //Selects where players are active
                     .Select(stats => stats.stepsTaken).ToArray()
                     .Min();
                 int minStepsId = Array.IndexOf(q_allPlayerStats, q_allPlayerStats.First(stats => stats.stepsTaken == minSteps));
                 if (__instance.connectedPlayersAmount > conPlayerReq && minSteps < 10)
                     playerNoteStorage.Add(new Tuple<int, string>(minStepsId, "The laziest employee."));
+                mls.LogInfo($"Marked player {minStepsId + 1} as laziest taking {minSteps} steps.");
             }
 
             //Refactor of code that gets the max turns player
@@ -64,6 +68,7 @@ namespace MoreNotesMod.Patches
 
                 if (__instance.connectedPlayersAmount > conPlayerReq)
                     playerNoteStorage.Add(new Tuple<int, string>(maxTurnsId, "The most paranoid employee."));
+                mls.LogInfo($"Marked player {maxTurnsId + 1} as most paranoid with {maxTurns} turns.");
             }
 
             //Refactor of code that gets the most injured
@@ -76,6 +81,7 @@ namespace MoreNotesMod.Patches
 
                 if (__instance.connectedPlayersAmount > conPlayerReq)
                     playerNoteStorage.Add(new Tuple<int, string>(maxDamageTakenId, "Sustained the most injuries."));
+                mls.LogInfo($"Marked player {maxDamageTakenId + 1} as the most injured taking {maxDamageTaken} damage.");
             }
 
             //Refactor of code that gets the most injured
@@ -88,6 +94,7 @@ namespace MoreNotesMod.Patches
 
                 if (__instance.connectedPlayersAmount > conPlayerReq && maxProfit > 50)
                     playerNoteStorage.Add(new Tuple<int, string>(maxProfitId, "Most profitable."));
+                mls.LogInfo($"Marked player {maxProfitId + 1} as the most profitable making {maxProfit} credits.");
             }
 
             //Adds best dancer
@@ -99,15 +106,38 @@ namespace MoreNotesMod.Patches
 
                 //Player must be dancing for so long
                 if (__instance.connectedPlayersAmount > conPlayerReq && maxDance >= 20f)
-                    playerNoteStorage.Add(new Tuple<int, string>(maxDanceId, $"Hit the dance floor for {maxDance:0} seconds"));
+                    playerNoteStorage.Add(new Tuple<int, string>(maxDanceId, $"Hit the dance floor."));
+                mls.LogInfo($"Marked player {maxDanceId + 1} as the best dancer dancing {maxDance:0} seconds.")
             }
 
-           
-
-            //Adds all player notes
-            foreach (Tuple<int, string> playerNote in playerNoteStorage)
+            //Picks Notes randomly and displays them
             {
-                __instance.gameStats.allPlayerStats[playerNote.Item1].playerNotes.Add(playerNote.Item2);
+                Random notePicker = new Random(__instance.randomMapSeed); //Choses what notes to display with the synced seed
+                int notePickCount = 4; //Pick a number of things to pick
+                int pickedID; //Id of picked element
+                Tuple<int, string> pickedNote; //Data for picked note
+                List<Tuple<int, string>> pickedNoteList = new List<Tuple<int, string>>(); //Make a new list for the notes
+
+                mls.LogInfo($"Picking {notePickCount} notes from list.");
+
+                for (int i = 0; i < notePickCount; i++)
+                {
+                    if (playerNoteStorage.Count() == 0) { break; }
+                    pickedID = notePicker.Next(playerNoteStorage.Count());
+                    pickedNote = playerNoteStorage[pickedID];
+                    playerNoteStorage.RemoveAt(pickedID);
+                    pickedNoteList.Add(pickedNote);
+                }
+
+                mls.LogInfo($"Picked notes! Preparing to add to playerStats.");
+
+                //Adds all player notes
+                foreach (Tuple<int, string> playerNote in pickedNoteList)
+                {
+                    q_allPlayerStats[playerNote.Item1].playerNotes.Add(playerNote.Item2);
+                }
+
+                mls.LogInfo("Notes added!");
             }
 
             return true; //Tells patcher to skip orignal code
