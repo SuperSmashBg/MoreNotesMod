@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
 using HarmonyLib;
 using System.Reflection;
 using UnityEngine;
@@ -34,6 +35,8 @@ namespace MoreNotesMod
             //Applies patches (I think)
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             _harmony.PatchAll(typeof(Patches.StatPatches));
+
+            public ManualLogSource mls;
 
         }
     }
