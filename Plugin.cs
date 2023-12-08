@@ -10,8 +10,8 @@ namespace MoreNotesMod
     public class Plugin : BaseUnityPlugin
     {
         public static Harmony _harmony;
-        //public ManualLogSource mls;
         public static Plugin Instance;
+        public ManualLogSource mls;
         private void Awake()
         {
             //Netcode shit
@@ -35,8 +35,6 @@ namespace MoreNotesMod
             //Applies patches (I think)
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             _harmony.PatchAll(typeof(Patches.StatPatches));
-
-            public ManualLogSource mls;
 
         }
     }

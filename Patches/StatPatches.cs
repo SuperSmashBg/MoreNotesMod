@@ -107,7 +107,7 @@ namespace MoreNotesMod.Patches
                 //Player must be dancing for so long
                 if (__instance.connectedPlayersAmount > conPlayerReq && maxDance >= 20f)
                     playerNoteStorage.Add(new Tuple<int, string>(maxDanceId, $"Hit the dance floor."));
-                mls.LogInfo($"Marked player {maxDanceId + 1} as the best dancer dancing {maxDance:0} seconds.")
+                mls.LogInfo($"Marked player {maxDanceId + 1} as the best dancer dancing {maxDance:0} seconds.");
             }
 
             //Picks Notes randomly and displays them
