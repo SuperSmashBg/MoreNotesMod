@@ -28,7 +28,8 @@ namespace MoreNotesMod.Patches
             //Resets and sets the danceTotal array
             danceTotal = new float[playerCount];
             deltaJetpackUsage = new float[playerCount];
-           
+            activationJetpackPower = new float[playerCount];
+
         }
 
         //Patches before the WritePlayerNotes method
@@ -38,9 +39,9 @@ namespace MoreNotesMod.Patches
         {
             //Holds all of the data related to player notes
             List<Tuple<int, string>> playerNoteStorage = new List<Tuple<int, string>>();
-            
+
             //Quick ref to an important value
-            var q_allPlayerStats =  __instance.gameStats.allPlayerStats;
+            var q_allPlayerStats = __instance.gameStats.allPlayerStats;
             var q_allPlayerScripts = __instance.allPlayerScripts;
 
             //copy of the code that sets isActivePlayer
@@ -116,6 +117,19 @@ namespace MoreNotesMod.Patches
                 mls.LogInfo($"Marked player {maxDanceId + 1} as the best dancer dancing {maxDance:0} seconds.");
             }
 
+            //Adds best pilot
+            { 
+                float maxJetpackDelta = deltaJetpackUsage
+                    .Where((stats, index) => q_allPlayerStats[index].isActivePlayer).ToArray()
+                    .Max();
+                int maxJetpackDeltaId = Array.IndexOf(deltaJetpackUsage, maxJetpackDelta);
+
+                //Player must have spent 1/3 jetpack
+                if (__instance.connectedPlayersAmount > conPlayerReq && maxJetpackDelta >= 0.33f)
+                    playerNoteStorage.Add(new Tuple<int, string>(maxJetpackDeltaId, $"Flys everywhere instead of walking."));
+                mls.LogInfo($"Marked Player {maxJetpackDeltaId + 1} as best pilot spending {maxJetpackDelta:0.#} charge.");
+            }
+
             //Picks Notes randomly and displays them
             {
                 System.Random notePicker = new System.Random(__instance.randomMapSeed); //Choses what notes to display with the synced seed
@@ -158,7 +172,8 @@ namespace MoreNotesMod.Patches
             //Gets the animation number from the player model
             //Apparently this value is never over-writen
             //However I think that should not be an issue?
-            if (__instance.playerBodyAnimator.GetInteger("emoteNumber") == 1) { 
+            if (__instance.playerBodyAnimator.GetInteger("emoteNumber") == 1)
+            {
                 //Checked the code, timeSinceStartingEmote is set after the PRC call
                 //The (int) conversion gets the id for the player in the array (somehow)
                 //danceTotal will be called in my WritePlayerNotes Patch
@@ -170,12 +185,12 @@ namespace MoreNotesMod.Patches
         //Is called by activate items which is synced
         [HarmonyPatch(typeof(JetpackItem), "ActivateJetpack")]
         [HarmonyPostfix]
-        public static void ActivateJetpackPatch(JetpackItem __instance)
+        public static void ActivateJetpackPatch(JetpackItem __instance, ref bool ___jetpackActivatedPreviousFrame)
         {
             //Find the startofround object. This is done by the game and is OK
             //Done to get player count for setting the array correctly
             StartOfRound startOfRound = UnityEngine.Object.FindObjectOfType<StartOfRound>();
-            if (startOfRound != null && __instance.jetpackActivatedPreviousFrame)
+            if (startOfRound != null && ___jetpackActivatedPreviousFrame)
             {
                 int playerCount = startOfRound.allPlayerObjects.Length;
                 //This part sets the array if it is not enough/not made
@@ -190,7 +205,8 @@ namespace MoreNotesMod.Patches
                 if (holdingPlayer != null)
                 {
                     //Sets the array to the Jetpack charge 
-                    activationJetpackPower[(int)(checked((IntPtr)holdingPlayer.playerClientId))] = __instance.insertedBattery.charge; 
+                    activationJetpackPower[(int)(checked((IntPtr)holdingPlayer.playerClientId))] = __instance.insertedBattery.charge;
+                    mls.LogInfo($"Set activationPower index:{(int)(checked((IntPtr)holdingPlayer.playerClientId))} to {__instance.insertedBattery.charge:0.##}.");
                 }
             }
         }
@@ -199,10 +215,37 @@ namespace MoreNotesMod.Patches
         //Is called by synced RPC's
         [HarmonyPatch(typeof(JetpackItem), "DeativateJetpack")]
         [HarmonyPostfix]
-        public static void DeactivateJetpackPatch()
+        public static void DeactivateJetpackPatch(JetpackItem __instance, ref PlayerControllerB ___previousPlayerHeldBy)
         {
-          
+            //Uses startOfRound to protect our array from bad playercount calls
+            StartOfRound startOfRound = UnityEngine.Object.FindObjectOfType<StartOfRound>();
+            if (startOfRound != null)
+            {
+                int playerCount = startOfRound.allPlayerObjects.Length;
+                if (deltaJetpackUsage.Length != playerCount)
+                {
+                    //Makes correctly sized array
+                    deltaJetpackUsage = new float[playerCount];
+                    mls.LogInfo("deltaJetpackUsage Made.");
+                }
+
+                //Gets holding or ex/holding player
+                PlayerControllerB holdingPlayer = __instance.playerHeldBy;
+                if (holdingPlayer == null)
+                    holdingPlayer = ___previousPlayerHeldBy;
+
+                //Sets deltaJetpackUsage if the player has an innital value for charge
+                if (holdingPlayer != null
+                    && activationJetpackPower[(int)(checked((IntPtr)holdingPlayer.playerClientId))] != 0f)
+                {
+                    deltaJetpackUsage[(int)(checked((IntPtr)holdingPlayer.playerClientId))] =
+                        activationJetpackPower[(int)(checked((IntPtr)holdingPlayer.playerClientId))] -
+                         __instance.insertedBattery.charge;
+                    mls.LogInfo($"Set player deltaCharge index:{(int)(checked((IntPtr)holdingPlayer.playerClientId))} to {deltaJetpackUsage[(int)(checked((IntPtr)holdingPlayer.playerClientId))]:0.##}.");
+                }
+
+            }
         }
+
     }
-   
 }
