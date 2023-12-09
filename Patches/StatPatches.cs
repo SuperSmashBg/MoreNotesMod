@@ -17,13 +17,17 @@ namespace MoreNotesMod.Patches
 
         public static float[] danceTotal;
         public static int conPlayerReq = 0;
+        public static float[] activationJetpackPower;
+        public static float[] deltaJetpackUsage;
 
         [HarmonyPatch(typeof(StartOfRound), "StartGame")]
         [HarmonyPostfix]
         public static void PatchStartGame(StartOfRound __instance)
         {
-           //Resets and sets the danceTotal array
-           danceTotal = new float[__instance.gameStats.allPlayerStats.Length];
+            int playerCount = __instance.allPlayerObjects.Length;
+            //Resets and sets the danceTotal array
+            danceTotal = new float[playerCount];
+            deltaJetpackUsage = new float[playerCount];
            
         }
 
@@ -166,12 +170,28 @@ namespace MoreNotesMod.Patches
         //Is called by activate items which is synced
         [HarmonyPatch(typeof(JetpackItem), "ActivateJetpack")]
         [HarmonyPostfix]
-        public static void ActivateJetpackPatch() 
+        public static void ActivateJetpackPatch(JetpackItem __instance)
         {
-            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
-            if (timeOfDay != null)
+            //Find the startofround object. This is done by the game and is OK
+            //Done to get player count for setting the array correctly
+            StartOfRound startOfRound = UnityEngine.Object.FindObjectOfType<StartOfRound>();
+            if (startOfRound != null && __instance.jetpackActivatedPreviousFrame)
             {
-
+                int playerCount = startOfRound.allPlayerObjects.Length;
+                //This part sets the array if it is not enough/not made
+                if (activationJetpackPower.Length != playerCount)
+                {
+                    //Makes correctly sized array
+                    activationJetpackPower = new float[playerCount];
+                    mls.LogInfo("activationJetpackPower Made.");
+                }
+                //Gets the holding player and sets the inital charge 
+                PlayerControllerB holdingPlayer = __instance.playerHeldBy;
+                if (holdingPlayer != null)
+                {
+                    //Sets the array to the Jetpack charge 
+                    activationJetpackPower[(int)(checked((IntPtr)holdingPlayer.playerClientId))] = __instance.insertedBattery.charge; 
+                }
             }
         }
 
@@ -181,11 +201,7 @@ namespace MoreNotesMod.Patches
         [HarmonyPostfix]
         public static void DeactivateJetpackPatch()
         {
-            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
-            if (timeOfDay != null)
-            {
-
-            }
+          
         }
     }
    
