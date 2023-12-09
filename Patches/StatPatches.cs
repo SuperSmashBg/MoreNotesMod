@@ -4,6 +4,8 @@ using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using Unity.Netcode;
 
 
 namespace MoreNotesMod.Patches
@@ -25,7 +27,7 @@ namespace MoreNotesMod.Patches
            
         }
 
-        //Patches after the WritePlayerNotes method
+        //Patches before the WritePlayerNotes method
         [HarmonyPatch(typeof(StartOfRound), "WritePlayerNotes")]
         [HarmonyPrefix]
         public static bool WrirtePlayerNotesPatch(StartOfRound __instance)
@@ -112,7 +114,7 @@ namespace MoreNotesMod.Patches
 
             //Picks Notes randomly and displays them
             {
-                Random notePicker = new Random(__instance.randomMapSeed); //Choses what notes to display with the synced seed
+                System.Random notePicker = new System.Random(__instance.randomMapSeed); //Choses what notes to display with the synced seed
                 int notePickCount = 4; //Pick a number of things to pick
                 int pickedID; //Id of picked element
                 Tuple<int, string> pickedNote; //Data for picked note
@@ -160,7 +162,31 @@ namespace MoreNotesMod.Patches
             }
         }
 
-    
+        //Keeps track of a player getting jetpack controlls
+        //Is called by activate items which is synced
+        [HarmonyPatch(typeof(JetpackItem), "ActivateJetpack")]
+        [HarmonyPostfix]
+        public static void ActivateJetpackPatch() 
+        {
+            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
+            if (timeOfDay != null)
+            {
+
+            }
+        }
+
+        //Keeps track of a player getting jetpack controlls
+        //Is called by synced RPC's
+        [HarmonyPatch(typeof(JetpackItem), "DeativateJetpack")]
+        [HarmonyPostfix]
+        public static void DeactivateJetpackPatch()
+        {
+            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
+            if (timeOfDay != null)
+            {
+
+            }
+        }
     }
    
 }
