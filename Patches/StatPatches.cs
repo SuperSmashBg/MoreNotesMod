@@ -24,11 +24,12 @@ namespace MoreNotesMod.Patches
         [HarmonyPostfix]
         public static void PatchStartGame(StartOfRound __instance)
         {
-            int playerCount = __instance.allPlayerObjects.Length;
+            int playerCount = __instance.gameStats.allPlayerStats.Length;
             //Resets and sets the danceTotal array
             danceTotal = new float[playerCount];
             deltaJetpackUsage = new float[playerCount];
             activationJetpackPower = new float[playerCount];
+            mls.LogInfo("PatchStartOfGame Ran.");
 
         }
 
@@ -117,7 +118,8 @@ namespace MoreNotesMod.Patches
                 mls.LogInfo($"Marked player {maxDanceId + 1} as the best dancer dancing {maxDance:0} seconds.");
             }
 
-            //Adds best pilot
+            //Adds best pilot 
+            /*
             { 
                 float maxJetpackDelta = deltaJetpackUsage
                     .Where((stats, index) => q_allPlayerStats[index].isActivePlayer).ToArray()
@@ -128,7 +130,7 @@ namespace MoreNotesMod.Patches
                 if (__instance.connectedPlayersAmount > conPlayerReq && maxJetpackDelta >= 0.33f)
                     playerNoteStorage.Add(new Tuple<int, string>(maxJetpackDeltaId, $"Flys everywhere instead of walking."));
                 mls.LogInfo($"Marked Player {maxJetpackDeltaId + 1} as best pilot spending {maxJetpackDelta:0.#} charge.");
-            }
+            } */
 
             //Picks Notes randomly and displays them
             {
@@ -159,7 +161,7 @@ namespace MoreNotesMod.Patches
 
                 mls.LogInfo("Notes added!");
             }
-
+            
             return true; //Tells patcher to skip orignal code
 
         }
@@ -180,7 +182,7 @@ namespace MoreNotesMod.Patches
                 danceTotal[(int)(checked((IntPtr)__instance.playerClientId))] += __instance.timeSinceStartingEmote;
             }
         }
-
+        /*
         //Keeps track of a player getting jetpack controlls
         //Is called by activate items which is synced
         [HarmonyPatch(typeof(JetpackItem), "ActivateJetpack")]
@@ -192,7 +194,7 @@ namespace MoreNotesMod.Patches
             StartOfRound startOfRound = UnityEngine.Object.FindObjectOfType<StartOfRound>();
             if (startOfRound != null && ___jetpackActivatedPreviousFrame)
             {
-                int playerCount = startOfRound.allPlayerObjects.Length;
+                int playerCount = startOfRound.gameStats.allPlayerStats.Length;
                 //This part sets the array if it is not enough/not made
                 if (activationJetpackPower.Length != playerCount)
                 {
@@ -213,7 +215,8 @@ namespace MoreNotesMod.Patches
 
         //Keeps track of a player getting jetpack controlls
         //Is called by synced RPC's
-        [HarmonyPatch(typeof(JetpackItem), "DeativateJetpack")]
+        
+        [HarmonyPatch(typeof(JetpackItem), "DeactivateJetpack")]
         [HarmonyPostfix]
         public static void DeactivateJetpackPatch(JetpackItem __instance, ref PlayerControllerB ___previousPlayerHeldBy)
         {
@@ -221,7 +224,7 @@ namespace MoreNotesMod.Patches
             StartOfRound startOfRound = UnityEngine.Object.FindObjectOfType<StartOfRound>();
             if (startOfRound != null)
             {
-                int playerCount = startOfRound.allPlayerObjects.Length;
+                int playerCount = startOfRound.gameStats.allPlayerStats.Length;
                 if (deltaJetpackUsage.Length != playerCount)
                 {
                     //Makes correctly sized array
@@ -246,6 +249,6 @@ namespace MoreNotesMod.Patches
 
             }
         }
-
+        */
     }
 }
