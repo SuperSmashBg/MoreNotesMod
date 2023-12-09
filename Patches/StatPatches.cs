@@ -4,8 +4,7 @@ using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using Unity.Netcode;
+
 
 
 namespace MoreNotesMod.Patches
@@ -162,31 +161,6 @@ namespace MoreNotesMod.Patches
             }
         }
 
-        //Keeps track of a player getting jetpack controlls
-        //Is called by activate items which is synced
-        [HarmonyPatch(typeof(JetpackItem), "ActivateJetpack")]
-        [HarmonyPostfix]
-        public static void ActivateJetpackPatch() 
-        {
-            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
-            if (timeOfDay != null)
-            {
-
-            }
-        }
-
-        //Keeps track of a player getting jetpack controlls
-        //Is called by synced RPC's
-        [HarmonyPatch(typeof(JetpackItem), "DeativateJetpack")]
-        [HarmonyPostfix]
-        public static void DeactivateJetpackPatch()
-        {
-            TimeOfDay timeOfDay = UnityEngine.Object.FindObjectOfType<TimeOfDay>();
-            if (timeOfDay != null)
-            {
-
-            }
-        }
     }
    
 }
